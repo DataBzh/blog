@@ -1,27 +1,45 @@
 #Partie 1
 
-##Charger tm 
+##Chargement des packages  
 library("tm")
+library("tidyverse")
+library("tidytext")
+library("gutenbergr")
+
 ##Charger le document
-frenchcourt <- readLines("https://www.gutenberg.org/files/50052/50052-0.txt")
+frenchcourt <- gutenberg_download("50052") %>%
+  gutenberg_strip()
+
+##Tidytext
+
+tidytext <- data_frame(line = 1:nrow(frenchcourt), text = frenchcourt$text) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words) %>%
+  count(word, sort = TRUE) 
+
+barplot(height=head(tidytext, 10)$n, names.arg= head(tidytext, 10)$word, xlab="Mots", ylab="Fréquence", col="#973232", main="Analyse de 'Pictures of the old French court'")
+
+##Méthode classique
+
 ##Créer un corpus
-frenchcourtpVS <- VectorSource(frenchcourt)
-corpus <- VCorpus(frenchcourtpVS)
+corpus <- frenchcourt %>%
+  VectorSource()%>%
+  VCorpus()
 ##Nettoyer le corpus
-corpus <- tm_map(corpus, content_transformer(tolower))
-corpus <- tm_map(corpus, stripWhitespace)
-corpus <- tm_map(corpus, removeNumbers)
-corpus <- tm_map(corpus, removePunctuation)
-corpus <- tm_map(corpus, removeWords, stopwords("english"))
+corpus <- corpus %>%
+  tm_map(content_transformer(tolower))%>%
+  tm_map(stripWhitespace) %>%
+  tm_map(removeNumbers)%>%
+  tm_map(removePunctuation)%>%
+  tm_map(removeWords, stopwords("english"))
 ##Créer une matrice des fréquences
-TDM <- TermDocumentMatrix(corpus)
-matrixFrenchCourt <- as.matrix(TDM)
-sortedmatrix <- sort(rowSums(matrixFrenchCourt),decreasing=TRUE)
-frequence <- data.frame(word = names(sortedmatrix),freq=sortedmatrix)
-#Les 10 mots les plus présents
-tete <- head(frequence, 10)
+TDM <- corpus %>%
+  TermDocumentMatrix() %>%
+  as.matrix()
+TDM <- sort(rowSums(TDM),decreasing=TRUE)
+TDM <- data.frame(word = names(TDM),freq=TDM)
 #Visualisation de ces 10 mots
-barplot(height=tete$freq, names.arg=tete$word, xlab="Mots", ylab="Fréquence", col="#973232", main="Analyse de 'Pictures of the old French court'")
+barplot(height=head(TDM,10)$freq, names.arg=head(TDM,10)$word, xlab="Mots", ylab="Fréquence", col="#973232", main="Analyse de 'Pictures of the old French court'")
 
 #Partie 2 
 
