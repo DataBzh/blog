@@ -51,6 +51,9 @@ barplot(height=head(TDM,10)$freq, names.arg=head(TDM,10)$word, xlab="Mots", ylab
 #racinisation
 
 library("SnowballC")
+library("tidyverse")
+library("proustr")
+library("tidytext")
 books_tidy <- proust_books() %>%
   mutate(text = stringr::str_replace_all(.$text, "’", " ")) %>% 
   unnest_tokens(word, text) %>%
