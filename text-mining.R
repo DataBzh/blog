@@ -67,7 +67,10 @@ length(unique(stem))
 #Partie 3
 
 ##Création du nuage de mot
-library(wordcloud)
+library("wordcloud")
+library("tidyverse")
+library("proustr")
+library("tidytext")
 books_tidy <- proust_books() %>%
   mutate(text = stringr::str_replace_all(.$text, "’", " ")) %>% 
   unnest_tokens(word, text) %>%
@@ -78,6 +81,13 @@ wordcloud(books_tidy$word, books_tidy$n, max.words=100, rot.per=FALSE, colors= c
 #Partie 4 
 
 ##Vecteur de termes associés 
+library("wordcloud")
+library("tidyverse")
+library("proustr")
+library("tidytext")
+library("qdapTools")
+library("tm")
+
 corpus <- proust_books() %>%
   mutate(text = stringr::str_replace_all(.$text, "’", " ")) %>% 
   .$text %>% 
@@ -89,8 +99,6 @@ corpus <- proust_books() %>%
   tm_map(removePunctuation)%>%
   tm_map(removeWords, stopwords("french"))%>%
   TermDocumentMatrix() 
-
-library(qdapTools)
 
 associations <- findAssocs(corpus, "temps", corlimit = 0.05) %>% 
   list_vect2df() %>%
