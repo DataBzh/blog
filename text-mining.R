@@ -2,27 +2,32 @@
 
 ##Chargement des packages  
 library("tm")
-library("tidyverse")
 library("tidytext")
-library("gutenbergr")
+library("proustr")
+library("tidyverse")
+devtools::install_github("ThinkRstat/stopwords")
+library("stopwords")
 
 ##Charger le document
-frenchcourt <- gutenberg_download("50052") %>%
-  gutenberg_strip()
+books <- proust_books()
 
 ##Tidytext
 
-tidytext <- data_frame(line = 1:nrow(frenchcourt), text = frenchcourt$text) %>%
+books_tidy <- proust_books() %>%
+  mutate(text = stringr::str_replace_all(.$text, "’", " ")) %>% 
   unnest_tokens(word, text) %>%
-  anti_join(stop_words) %>%
-  count(word, sort = TRUE) 
+  filter(!word %in% stopwords_iso$fr) %>%
+  count(word, sort = TRUE) %a>%
+  head(10)
 
-barplot(height=head(tidytext, 10)$n, names.arg= head(tidytext, 10)$word, xlab="Mots", ylab="Fréquence", col="#973232", main="Analyse de 'Pictures of the old French court'")
+barplot(height=books_tidy$n, names.arg= books_tidy$word, xlab="Mots", ylab="Fréquence", col="#973232", main="À la recherche du temps perdu")
 
 ##Méthode classique
 
 ##Créer un corpus
-corpus <- frenchcourt %>%
+corpus <- proust_books() %>%
+  mutate(text = stringr::str_replace_all(.$text, "’", " ")) %>% 
+  .$text %>% 
   VectorSource()%>%
   VCorpus()
 ##Nettoyer le corpus
@@ -31,7 +36,7 @@ corpus <- corpus %>%
   tm_map(stripWhitespace) %>%
   tm_map(removeNumbers)%>%
   tm_map(removePunctuation)%>%
-  tm_map(removeWords, stopwords("english"))
+  tm_map(removeWords, stopwords("french"))
 ##Créer une matrice des fréquences
 TDM <- corpus %>%
   TermDocumentMatrix() %>%
@@ -39,13 +44,13 @@ TDM <- corpus %>%
 TDM <- sort(rowSums(TDM),decreasing=TRUE)
 TDM <- data.frame(word = names(TDM),freq=TDM)
 #Visualisation de ces 10 mots
-barplot(height=head(TDM,10)$freq, names.arg=head(TDM,10)$word, xlab="Mots", ylab="Fréquence", col="#973232", main="Analyse de 'Pictures of the old French court'")
+barplot(height=head(TDM,10)$freq, names.arg=head(TDM,10)$word, xlab="Mots", ylab="Fréquence", col="#973232", main="À la recherche du temps perdu")
 
 #Partie 2 
 
 #racinisation
 
-corpus2 <- tm_map(corpus1, stemDocument)
+corpus2 <- tm_map(corpus, stemDocument)
 TDM2 <- TermDocumentMatrix(corpus2)
 TDM2 <- as.matrix(TDM2)
 
